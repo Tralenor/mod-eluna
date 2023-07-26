@@ -46,7 +46,7 @@ namespace LuaGroup
         Eluna::Push(L, group->isLFGGroup());
         return 1;
     }
-
+    
     /**
      * Returns 'true' if the [Group] is a raid [Group]
      *
@@ -149,29 +149,19 @@ namespace LuaGroup
         if (player->GetGroupInvite())
             player->UninviteFromGroup();
 
-#if defined TRINITY || AZEROTHCORE
         bool success = group->AddMember(player);
         if (success)
             group->BroadcastGroupUpdate();
-#else
-        bool success = group->AddMember(player->GetObjectGuid(), player->GetName());
-#endif
 
         Eluna::Push(L, success);
         return 1;
     }
 
-    /*int IsLFGGroup(lua_State* L, Group* group) // TODO: Implementation
-    {
-        Eluna::Push(L, group->isLFGGroup());
-        return 1;
-    }*/
-
-    /*int IsBFGroup(lua_State* L, Group* group) // TODO: Implementation
+    int IsBFGroup(lua_State* L, Group* group)
     {
         Eluna::Push(L, group->isBFGroup());
         return 1;
-    }*/
+    }
 
     /**
      * Returns a table with the [Player]s in this [Group]
@@ -186,12 +176,7 @@ namespace LuaGroup
 
         for (GroupReference* itr = group->GetFirstMember(); itr; itr = itr->next())
         {
-#if defined TRINITY || AZEROTHCORE
             Player* member = itr->GetSource();
-#else
-            Player* member = itr->getSource();
-#endif
-
             if (!member || !member->GetSession())
                 continue;
 
@@ -210,11 +195,7 @@ namespace LuaGroup
      */
     int GetLeaderGUID(lua_State* L, Group* group)
     {
-#if defined TRINITY || AZEROTHCORE
         Eluna::Push(L, group->GetLeaderGUID());
-#else
-        Eluna::Push(L, group->GetLeaderGuid());
-#endif
         return 1;
     }
 
@@ -225,11 +206,7 @@ namespace LuaGroup
      */
     int GetGUID(lua_State* L, Group* group)
     {
-#ifdef CLASSIC
-        Eluna::Push(L, group->GetId());
-#else
         Eluna::Push(L, group->GET_GUID());
-#endif
         return 1;
     }
 
@@ -242,11 +219,7 @@ namespace LuaGroup
     int GetMemberGUID(lua_State* L, Group* group)
     {
         const char* name = Eluna::CHECKVAL<const char*>(L, 2);
-#if defined TRINITY || AZEROTHCORE
         Eluna::Push(L, group->GetMemberGUID(name));
-#else
-        Eluna::Push(L, group->GetMemberGuid(name));
-#endif
         return 1;
     }
 
@@ -258,28 +231,6 @@ namespace LuaGroup
     int GetMembersCount(lua_State* L, Group* group)
     {
         Eluna::Push(L, group->GetMembersCount());
-        return 1;
-    }
-
-    /**
-     * Returns the type of this [Group]
-     *
-     * <pre>
-     * enum GroupType
-     * {
-     *     GROUPTYPE_NORMAL         = 0,
-     *     GROUPTYPE_BG             = 1,
-     *     GROUPTYPE_RAID           = 2,
-     *     GROUPTYPE_LFG_RESTRICTED = 4,
-     *     GROUPTYPE_LFG            = 8
-     * };
-     * </pre>
-     *
-     * @return [GroupType] groupType
-     */
-    int GetGroupType(lua_State* L, Group* group)
-    {
-        Eluna::Push(L, group->GetGroupType());
         return 1;
     }
 
@@ -322,11 +273,7 @@ namespace LuaGroup
         bool ignorePlayersInBg = Eluna::CHECKVAL<bool>(L, 3);
         ObjectGuid ignore = Eluna::CHECKVAL<ObjectGuid>(L, 4);
 
-#ifdef CMANGOS
-        group->BroadcastPacket(*data, ignorePlayersInBg, -1, ignore);
-#else
         group->BroadcastPacket(data, ignorePlayersInBg, -1, ignore);
-#endif
         return 0;
     }
 
@@ -352,11 +299,7 @@ namespace LuaGroup
         ObjectGuid guid = Eluna::CHECKVAL<ObjectGuid>(L, 2);
         uint32 method = Eluna::CHECKVAL<uint32>(L, 3, 0);
 
-#if defined TRINITY || AZEROTHCORE
         Eluna::Push(L, group->RemoveMember(guid, (RemoveMethod)method));
-#else
-        Eluna::Push(L, group->RemoveMember(guid, method));
-#endif
         return 1;
     }
 
@@ -420,45 +363,15 @@ namespace LuaGroup
         if (icon >= TARGETICONCOUNT)
             return luaL_argerror(L, 2, "valid target icon expected");
 
-#if (defined(CLASSIC) || defined(TBC))
-        group->SetTargetIcon(icon, target);
-#else
         group->SetTargetIcon(icon, setter, target);
-#endif
         return 0;
     }
 
-    /**
-     * Sets or removes a flag for a [Group] member
-     * 
-     * <pre>
-     * enum GroupMemberFlags
-     * {
-     *     MEMBER_FLAG_ASSISTANT   = 0x01,
-     *     MEMBER_FLAG_MAINTANK    = 0x02,
-     *     MEMBER_FLAG_MAINASSIST  = 0x04,
-     * };
-     * </pre>
-     * 
-     * @param ObjectGuid target : GUID of the target
-     * @param bool apply : add the `flag` if `true`, remove the `flag` otherwise
-     * @param [GroupMemberFlags] flag : the flag to set or unset
-     */
-    int SetMemberFlag(lua_State* L, Group* group)
-    {
-        ObjectGuid target = Eluna::CHECKVAL<ObjectGuid>(L, 2);
-        bool apply = Eluna::CHECKVAL<bool>(L, 3);
-        GroupMemberFlags flag = static_cast<GroupMemberFlags>(Eluna::CHECKVAL<uint32>(L, 4));
-
-        group->SetGroupMemberFlag(target, apply, flag);
-        return 0;
-    }
-
-    /*int ConvertToLFG(lua_State* L, Group* group) // TODO: Implementation
+    int ConvertToLFG(lua_State* L, Group* group) // TODO: Implementation
     {
         group->ConvertToLFG();
         return 0;
-    }*/
+    }
     
     ElunaRegister<Group> GroupMethodsOverride[] =
     {
@@ -484,7 +397,7 @@ namespace LuaGroup
         { "IsLFGGroup", &LuaGroup::IsLFGGroup },
         { "IsRaidGroup", &LuaGroup::IsRaidGroup },
         { "IsBGGroup", &LuaGroup::IsBGGroup },
-        { "IsBFGroup", nullptr },   // not implemented
+        { "IsBFGroup", &LuaGroup::IsBFGroup },
         { "IsMember", &LuaGroup::IsMember },
         { "IsAssistant", &LuaGroup::IsAssistant },
         { "SameSubGroup", &LuaGroup::SameSubGroup },
@@ -492,7 +405,7 @@ namespace LuaGroup
 
         // Other
         { "SendPacket", &LuaGroup::SendPacket },
-        { "ConvertToLFG", nullptr },    // not implemented
+        { "ConvertToLFG", &LuaGroup::ConvertToLFG },
         { "ConvertToRaid", &LuaGroup::ConvertToRaid },
 
         { NULL, NULL }

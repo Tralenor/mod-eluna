@@ -59,11 +59,11 @@ namespace LuaMap
     /**
      * Returns `true` if the [Map] has no [Player]s, `false` otherwise.
      *
-     * @return bool IsEmpty
+     * @return bool isEmpty
      */
     int IsEmpty(lua_State* L, Map* map)
     {
-        Eluna::Push(L, map->IsEmpty());
+        Eluna::Push(L, map->isEmpty());
         return 1;
     }
 

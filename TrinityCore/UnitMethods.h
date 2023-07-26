@@ -13,77 +13,6 @@
 namespace LuaUnit
 {
     /**
-    * Sets a mechanic immunity for the [Unit].
-    *
-    * <pre>
-    *   MECHANIC_NONE             = 0,
-    *   MECHANIC_CHARM            = 1,
-    *   MECHANIC_DISORIENTED      = 2,
-    *   MECHANIC_DISARM           = 3,
-    *   MECHANIC_DISTRACT         = 4,
-    *   MECHANIC_FEAR             = 5,
-    *   MECHANIC_GRIP             = 6,
-    *   MECHANIC_ROOT             = 7,
-    *   MECHANIC_SLOW_ATTACK      = 8,
-    *   MECHANIC_SILENCE          = 9,
-    *   MECHANIC_SLEEP            = 10,
-    *   MECHANIC_SNARE            = 11,
-    *   MECHANIC_STUN             = 12,
-    *   MECHANIC_FREEZE           = 13,
-    *   MECHANIC_KNOCKOUT         = 14,
-    *   MECHANIC_BLEED            = 15,
-    *   MECHANIC_BANDAGE          = 16,
-    *   MECHANIC_POLYMORPH        = 17,
-    *   MECHANIC_BANISH           = 18,
-    *   MECHANIC_SHIELD           = 19,
-    *   MECHANIC_SHACKLE          = 20,
-    *   MECHANIC_MOUNT            = 21,
-    *   MECHANIC_INFECTED         = 22,
-    *   MECHANIC_TURN             = 23,
-    *   MECHANIC_HORROR           = 24,
-    *   MECHANIC_INVULNERABILITY  = 25,
-    *   MECHANIC_INTERRUPT        = 26,
-    *   MECHANIC_DAZE             = 27,
-    *   MECHANIC_DISCOVERY        = 28,
-    *   MECHANIC_IMMUNE_SHIELD    = 29,     // Divine (Blessing) Shield/Protection and Ice Block
-    *   MECHANIC_SAPPED           = 30,
-    *   MECHANIC_ENRAGED          = 31
-    * </pre>
-    *
-    * @param int32 immunity : new value for the immunity mask
-    * @param bool apply = true : if true, the immunity is applied, otherwise it is removed
-    */
-    int SetImmuneTo(lua_State* L, Unit* unit)
-    {
-        int32 immunity = Eluna::CHECKVAL<int32>(L, 2);
-        bool apply = Eluna::CHECKVAL<bool>(L, 3, true);
-
-        unit->ApplySpellImmune(0, 5, immunity, apply);
-        return 0;
-    }
-    
-    /**
-     * The [Unit] modifies a specific stat
-     *
-     * @param int32 stat : The stat to modify
-     * @param int8 type : The type of modifier to apply
-     * @param float value : The value to apply to the stat
-     * @param bool apply = false : Whether the modifier should be applied or removed
-     * @return bool : Whether the stat modification was successful
-     */
-    int HandleStatModifier(lua_State* L, Unit* unit)
-    {
-        int32 stat = Eluna::CHECKVAL<int32>(L, 2);
-        int8  type = Eluna::CHECKVAL<int8>(L, 3);
-
-        float value = Eluna::CHECKVAL<float>(L, 4);
-        bool apply = Eluna::CHECKVAL<bool>(L, 5, false);
-
-        Eluna::Push(L, unit->HandleStatModifier(UnitMods(UNIT_MOD_STAT_START + stat), (UnitModifierType)type, value, apply));
-        return 1;
-    }
-
-    /**
      * The [Unit] tries to attack a given target
      *
      * @param [Unit] who : [Unit] to attack
@@ -139,8 +68,7 @@ namespace LuaUnit
      */
     int IsRooted(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->isInRoots() || unit->HasUnitMovementFlag(MOVEMENTFLAG_ROOT));
-
+        Eluna::Push(L, unit->IsRooted() || unit->HasUnitMovementFlag(MOVEMENTFLAG_ROOT));
         return 1;
     }
 
@@ -167,7 +95,6 @@ namespace LuaUnit
         Creature* creature = Eluna::CHECKOBJ<Creature>(L, 2);
 
         Eluna::Push(L, unit->isInAccessiblePlaceFor(creature));
-
         return 1;
     }
 
@@ -179,7 +106,6 @@ namespace LuaUnit
     int IsAuctioneer(lua_State* L, Unit* unit)
     {
         Eluna::Push(L, unit->IsAuctioner());
-
         return 1;
     }
 
@@ -403,7 +329,6 @@ namespace LuaUnit
         return 1;
     }
 
-#ifndef CLASSIC
     /**
      * Returns true if the [Unit] is on a [Vehicle].
      *
@@ -414,7 +339,6 @@ namespace LuaUnit
         Eluna::Push(L, unit->GetVehicle());
         return 1;
     }
-#endif
 
     /**
      * Returns true if the [Unit] is in combat.
@@ -529,27 +453,28 @@ namespace LuaUnit
     int HasUnitState(lua_State* L, Unit* unit)
     {
         uint32 state = Eluna::CHECKVAL<uint32>(L, 2);
+
         Eluna::Push(L, unit->HasUnitState(state));
         return 1;
     }
 
-    /*int IsVisible(lua_State* L, Unit* unit)
+    int IsVisible(lua_State* L, Unit* unit)
     {
         Eluna::Push(L, unit->IsVisible());
         return 1;
-    }*/
+    }
 
-    /*int IsMoving(lua_State* L, Unit* unit)
+    int IsMoving(lua_State* L, Unit* unit)
     {
         Eluna::Push(L, unit->isMoving());
         return 1;
-    }*/
+    }
 
-    /*int IsFlying(lua_State* L, Unit* unit)
+    int IsFlying(lua_State* L, Unit* unit)
     {
         Eluna::Push(L, unit->IsFlying());
         return 1;
-    }*/
+    }
 
     /**
      * Returns the [Unit]'s owner.
@@ -580,7 +505,7 @@ namespace LuaUnit
      */
     int GetMountId(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->GetMountID());
+        Eluna::Push(L, unit->GetMountDisplayId());
         return 1;
     }
 
@@ -613,7 +538,7 @@ namespace LuaUnit
      */
     int GetCharmGUID(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->GetCharmGUID());
+        Eluna::Push(L, unit->GetCharmedGUID());
         return 1;
     }
 
@@ -728,7 +653,7 @@ namespace LuaUnit
      */
     int GetStandState(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->getStandState());
+        Eluna::Push(L, unit->GetStandState());
         return 1;
     }
 
@@ -779,7 +704,7 @@ namespace LuaUnit
     Powers PowerSelectorHelper(lua_State* L, Unit* unit, int powerType = -1)
     {
         if (powerType == -1)
-            return unit->getPowerType();
+            return unit->GetPowerType();
 
         if (powerType < 0 || powerType >= int(MAX_POWERS))
             luaL_argerror(L, 2, "valid Powers expected");
@@ -897,7 +822,7 @@ namespace LuaUnit
      */
     int GetPowerType(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->getPowerType());
+        Eluna::Push(L, unit->GetPowerType());
         return 1;
     }
 
@@ -930,7 +855,7 @@ namespace LuaUnit
      */
     int GetGender(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->getGender());
+        Eluna::Push(L, unit->GetGender());
         return 1;
     }
 
@@ -941,7 +866,7 @@ namespace LuaUnit
      */
     int GetRace(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->getRace());
+        Eluna::Push(L, unit->GetRace());
         return 1;
     }
 
@@ -952,7 +877,7 @@ namespace LuaUnit
      */
     int GetClass(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->getClass());
+        Eluna::Push(L, unit->GetClass());
         return 1;
     }
 
@@ -963,7 +888,7 @@ namespace LuaUnit
     */
     int GetRaceMask(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->getRaceMask());
+        Eluna::Push(L, unit->GetRaceMask());
         return 1;
     }
 
@@ -974,7 +899,7 @@ namespace LuaUnit
     */
     int GetClassMask(lua_State* L, Unit* unit)
     {
-        Eluna::Push(L, unit->getClassMask());
+        Eluna::Push(L, unit->GetClassMask());
         return 1;
     }
 
@@ -1035,11 +960,11 @@ namespace LuaUnit
         if (locale >= TOTAL_LOCALES)
             return luaL_argerror(L, 2, "valid LocaleConstant expected");
 
-        const ChrClassesEntry* entry = sChrClassesStore.LookupEntry(unit->getClass());
+        const ChrClassesEntry* entry = sChrClassesStore.LookupEntry(unit->GetClass());
         if (!entry)
             return 1;
 
-        Eluna::Push(L, entry->name[locale]);
+        Eluna::Push(L, entry->Name[locale]);
         return 1;
     }
 
@@ -1070,11 +995,11 @@ namespace LuaUnit
         if (locale >= TOTAL_LOCALES)
             return luaL_argerror(L, 2, "valid LocaleConstant expected");
 
-        const ChrRacesEntry* entry = sChrRacesStore.LookupEntry(unit->getRace());
+        const ChrRacesEntry* entry = sChrRacesStore.LookupEntry(unit->GetRace());
         if (!entry)
             return 1;
 
-        Eluna::Push(L, entry->name[locale]);
+        Eluna::Push(L, entry->Name[locale]);
         return 1;
     }
 
@@ -1098,6 +1023,7 @@ namespace LuaUnit
     int GetAura(lua_State* L, Unit* unit)
     {
         uint32 spellID = Eluna::CHECKVAL<uint32>(L, 2);
+
         Eluna::Push(L, unit->GetAura(spellID));
         return 1;
     }
@@ -1113,9 +1039,8 @@ namespace LuaUnit
         float range = Eluna::CHECKVAL<float>(L, 2, SIZE_OF_GRIDS);
 
         std::list<Unit*> list;
-
-        Acore::AnyFriendlyUnitInObjectRangeCheck checker(unit, unit, range);
-        Acore::UnitListSearcher<Acore::AnyFriendlyUnitInObjectRangeCheck> searcher(unit, list, checker);
+        Trinity::AnyFriendlyUnitInObjectRangeCheck checker(unit, unit, range);
+        Trinity::UnitListSearcher<Trinity::AnyFriendlyUnitInObjectRangeCheck> searcher(unit, list, checker);
         Cell::VisitAllObjects(unit, searcher, range);
 
         ElunaUtil::ObjectGUIDCheck guidCheck(unit->GET_GUID());
@@ -1146,9 +1071,10 @@ namespace LuaUnit
         float range = Eluna::CHECKVAL<float>(L, 2, SIZE_OF_GRIDS);
 
         std::list<Unit*> list;
-        Acore::AnyUnfriendlyUnitInObjectRangeCheck checker(unit, unit, range);
-        Acore::UnitListSearcher<Acore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(unit, list, checker);
+        Trinity::AnyUnfriendlyUnitInObjectRangeCheck checker(unit, unit, range);
+        Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> searcher(unit, list, checker);
         Cell::VisitAllObjects(unit, searcher, range);
+
         ElunaUtil::ObjectGUIDCheck guidCheck(unit->GET_GUID());
         list.remove_if(guidCheck);
 
@@ -1166,7 +1092,6 @@ namespace LuaUnit
         return 1;
     }
 
-#if (!defined(TBC) && !defined(CLASSIC))
     /**
      * Returns [Unit]'s [Vehicle] methods
      *
@@ -1178,13 +1103,11 @@ namespace LuaUnit
         return 1;
     }
 
-    /*
     int GetVehicle(lua_State* L, Unit* unit)
     {
-    Eluna::Push(L, unit->GetVehicle());
-    return 1;
+        Eluna::Push(L, unit->GetVehicle());
+        return 1;
     }
-    */
 
     /**
      * Returns the Critter Guid
@@ -1196,7 +1119,6 @@ namespace LuaUnit
         Eluna::Push(L, unit->GetCritterGUID());
         return 1;
     }
-#endif
 
     /**
      * Returns the [Unit]'s speed of given [UnitMoveType].
@@ -1226,41 +1148,6 @@ namespace LuaUnit
             return luaL_argerror(L, 2, "valid UnitMoveType expected");
 
         Eluna::Push(L, unit->GetSpeed((UnitMoveType)type));
-
-        return 1;
-    }
-
-    /**
-    * Returns the [Unit]'s speed rate of given [UnitMoveType].
-    *
-    * <pre>
-    * enum UnitMoveType
-    * {
-    *     MOVE_WALK           = 0,
-    *     MOVE_RUN            = 1,
-    *     MOVE_RUN_BACK       = 2,
-    *     MOVE_SWIM           = 3,
-    *     MOVE_SWIM_BACK      = 4,
-    *     MOVE_TURN_RATE      = 5,
-    *     MOVE_FLIGHT         = 6,
-    *     MOVE_FLIGHT_BACK    = 7,
-    *     MOVE_PITCH_RATE     = 8
-    * };
-    * </pre>
-    *
-    * @param [UnitMoveType] type
-    * @return float speed
-    */
-    int GetSpeedRate(lua_State* L, Unit* unit)
-    {
-        uint32 type = Eluna::CHECKVAL<uint32>(L, 2);
-        if (type >= MAX_MOVE_TYPE)
-        {
-            return luaL_argerror(L, 2, "valid UnitMoveType expected");
-        }
-
-        Eluna::Push(L, unit->GetSpeedRate((UnitMoveType)type));
-
         return 1;
     }
 
@@ -1299,34 +1186,6 @@ namespace LuaUnit
     int GetMovementType(lua_State* L, Unit* unit)
     {
         Eluna::Push(L, unit->GetMotionMaster()->GetCurrentMovementGeneratorType());
-        return 1;
-    }
-
-    /**
-     * Returns the [Unit]'s attackers.
-     *
-     * @return table attackers : table of [Unit]s attacking the unit
-     */
-    int GetAttackers(lua_State* L, Unit* unit)
-    {
-        const Unit::AttackerSet& attackers = unit->getAttackers();
-
-        lua_newtable(L);
-        int table = lua_gettop(L);
-        uint32 i = 1;
-        for (Unit* attacker : attackers)
-        {
-            if (!attacker)
-            {
-                continue;
-            }
-
-            Eluna::Push(L, attacker);
-            lua_rawseti(L, table, i);
-            ++i;
-        }
-
-        lua_settop(L, table); // push table to top of stack
         return 1;
     }
 
@@ -1392,7 +1251,7 @@ namespace LuaUnit
     }
 
     /**
-     * Sets the [Unit]'s speed of given [UnitMoveType] to given speed.
+     * Sets the [Unit]'s speed of given [UnitMoveType] to given rate.
      * If forced, packets sent to clients forcing the visual change.
      *
      * <pre>
@@ -1423,43 +1282,7 @@ namespace LuaUnit
         if (type >= MAX_MOVE_TYPE)
             return luaL_argerror(L, 2, "valid UnitMoveType expected");
 
-        unit->SetSpeed((UnitMoveType)type, rate);
-
-        return 0;
-    }
-
-    /**
-     * Sets the [Unit]'s speed rate of given [UnitMoveType] to given rate.
-     * If forced, packets sent to clients forcing the visual change.
-     *
-     * <pre>
-     * enum UnitMoveType
-     * {
-     *     MOVE_WALK           = 0,
-     *     MOVE_RUN            = 1,
-     *     MOVE_RUN_BACK       = 2,
-     *     MOVE_SWIM           = 3,
-     *     MOVE_SWIM_BACK      = 4,
-     *     MOVE_TURN_RATE      = 5,
-     *     MOVE_FLIGHT         = 6,
-     *     MOVE_FLIGHT_BACK    = 7,
-     *     MOVE_PITCH_RATE     = 8
-     * };
-     * </pre>
-     *
-     * @param [UnitMoveType] type
-     * @param float rate
-     * @param bool forced = false
-     */
-    int SetSpeedRate(lua_State* L, Unit* unit)
-    {
-        uint32 type = Eluna::CHECKVAL<uint32>(L, 2);
-        float rate = Eluna::CHECKVAL<float>(L, 3);
-        if (type >= MAX_MOVE_TYPE)
-            return luaL_argerror(L, 2, "valid UnitMoveType expected");
-
         unit->SetSpeedRate((UnitMoveType)type, rate);
-
         return 0;
     }
 
@@ -1473,7 +1296,6 @@ namespace LuaUnit
         uint32 factionId = Eluna::CHECKVAL<uint32>(L, 2);
 
         unit->SetFaction(factionId);
-
         return 0;
     }
 
@@ -1640,7 +1462,7 @@ namespace LuaUnit
         if (type >= int(MAX_POWERS))
             return luaL_argerror(L, 2, "valid Powers expected");
 
-        unit->setPowerType((Powers)type);
+        unit->SetPowerType((Powers)type);
         return 0;
     }
 
@@ -1700,6 +1522,7 @@ namespace LuaUnit
     int SetCreatorGUID(lua_State* L, Unit* unit)
     {
         ObjectGuid guid = Eluna::CHECKVAL<ObjectGuid>(L, 2);
+
         unit->SetCreatorGUID(guid);
         return 0;
     }
@@ -1712,6 +1535,7 @@ namespace LuaUnit
     int SetPetGUID(lua_State* L, Unit* unit)
     {
         ObjectGuid guid = Eluna::CHECKVAL<ObjectGuid>(L, 2);
+
         unit->SetPetGUID(guid);
         return 0;
     }
@@ -1724,6 +1548,7 @@ namespace LuaUnit
     int SetWaterWalk(lua_State* L, Unit* unit)
     {
         bool enable = Eluna::CHECKVAL<bool>(L, 2, true);
+
         unit->SetWaterWalking(enable);
         return 0;
     }
@@ -1736,7 +1561,8 @@ namespace LuaUnit
     int SetStandState(lua_State* L, Unit* unit)
     {
         uint8 state = Eluna::CHECKVAL<uint8>(L, 2);
-        unit->SetStandState(state);
+
+        unit->SetStandState(UnitStandStateType(state));
         return 0;
     }
 
@@ -1752,7 +1578,6 @@ namespace LuaUnit
         return 0;
     }
 
-#if (!defined(TBC) && !defined(CLASSIC))
     /**
      * Sets the [Unit]'s FFA flag on or off.
      *
@@ -1765,15 +1590,16 @@ namespace LuaUnit
         if (apply)
         {
             unit->SetByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP);
-            for (Unit::ControlSet::iterator itr = unit->m_Controlled.begin(); itr != unit->m_Controlled.end(); ++itr)
+            for (Unit::ControlList::iterator itr = unit->m_Controlled.begin(); itr != unit->m_Controlled.end(); ++itr)
                 (*itr)->SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP);
         }
         else
         {
             unit->RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP);
-            for (Unit::ControlSet::iterator itr = unit->m_Controlled.begin(); itr != unit->m_Controlled.end(); ++itr)
+            for (Unit::ControlList::iterator itr = unit->m_Controlled.begin(); itr != unit->m_Controlled.end(); ++itr)
                 (*itr)->RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP);
         }
+
         return 0;
     }
 
@@ -1804,14 +1630,14 @@ namespace LuaUnit
         unit->SetCritterGUID(guid);
         return 0;
     }
-#endif
 
-    /*int SetStunned(lua_State* L, Unit* unit)
+
+    int SetStunned(lua_State* L, Unit* unit)
     {
-    bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
-    unit->SetControlled(apply, UNIT_STATE_STUNNED);
-    return 0;
-    }*/
+        bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
+        unit->SetControlled(apply, UNIT_STATE_STUNNED);
+        return 0;
+    }
 
     /**
      * Roots the [Unit] to the ground, if 'false' specified, unroots the [Unit].
@@ -1821,6 +1647,7 @@ namespace LuaUnit
     int SetRooted(lua_State* L, Unit* unit)
     {
         bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
+
         unit->SetControlled(apply, UNIT_STATE_ROOT);
         return 0;
     }
@@ -1833,6 +1660,7 @@ namespace LuaUnit
     int SetConfused(lua_State* L, Unit* unit)
     {
         bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
+
         unit->SetControlled(apply, UNIT_STATE_CONFUSED);
         return 0;
     }
@@ -1845,70 +1673,34 @@ namespace LuaUnit
     int SetFeared(lua_State* L, Unit* unit)
     {
         bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
+
         unit->SetControlled(apply, UNIT_STATE_FLEEING);
         return 0;
     }
 
-    /*int SetCanFly(lua_State* L, Unit* unit)
+    int SetCanFly(lua_State* L, Unit* unit)
     {
         bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
+
         unit->SetCanFly(apply);
         return 0;
-    }*/
+    }
 
-    /*int SetVisible(lua_State* L, Unit* unit)
+    int SetVisible(lua_State* L, Unit* unit)
     {
         bool x = Eluna::CHECKVAL<bool>(L, 2, true);
+
         unit->SetVisible(x);
         return 0;
-    }*/
+    }
 
     /**
      * Clears the [Unit]'s threat list.
      */
     int ClearThreatList(lua_State* /*L*/, Unit* unit)
     {
-        unit->GetThreatMgr().ClearAllThreat();
+        unit->GetThreatManager().ClearAllThreat();
         return 0;
-    }
-
-    /**
-     * Returns the [Unit]'s threat list.
-     *
-     * @return table threatList : table of [Unit]s in the threat list
-     */
-    int GetThreatList(lua_State* L, Unit* unit)
-    {
-        if (!unit->CanHaveThreatList())
-        {
-            Eluna::Push(L);
-            return 1;
-        }
-
-        ThreatContainer::StorageType const& list = unit->GetThreatMgr().GetThreatList();
-
-        lua_newtable(L);
-        int table = lua_gettop(L);
-        uint32 i = 1;
-        for (ThreatReference* item : list)
-        {
-            if (!item)
-            {
-                continue;
-            }
-            Unit* victim = item->GetVictim();
-            if (!victim)
-            {
-                continue;
-            }
-
-            Eluna::Push(L, victim);
-            lua_rawseti(L, table, i);
-            ++i;
-        }
-
-        lua_settop(L, table); // push table to top of stack
-        return 1;
     }
 
     /**
@@ -1945,7 +1737,8 @@ namespace LuaUnit
      */
     int PerformEmote(lua_State* L, Unit* unit)
     {
-        unit->HandleEmoteCommand(Eluna::CHECKVAL<uint32>(L, 2));
+        Emote emote = static_cast<Emote>(Eluna::CHECKVAL<uint32>(L, 2));
+        unit->HandleEmoteCommand(emote);
         return 0;
     }
 
@@ -2006,16 +1799,10 @@ namespace LuaUnit
 
         WorldPacket data;
         ChatHandler::BuildChatPacket(data, ChatMsg(type), Language(lang), unit, target, msg);
+
         target->GetSession()->SendPacket(&data);
         return 0;
     }
-
-    /*static void PrepareMove(Unit* unit)
-    {
-        unit->GetMotionMaster()->MovementExpired(); // Chase
-        unit->StopMoving(); // Some
-        unit->GetMotionMaster()->Clear(); // all
-    }*/
 
     /**
      * Stops the [Unit]'s movement
@@ -2033,8 +1820,8 @@ namespace LuaUnit
      */
     int MoveExpire(lua_State* L, Unit* unit)
     {
-        bool reset = Eluna::CHECKVAL<bool>(L, 2, true);
-        unit->GetMotionMaster()->MovementExpired(reset);
+        (void) L; // ensure that the variable is referenced in order to pass compiler checks
+        unit->GetMotionMaster()->Clear();
         return 0;
     }
 
@@ -2045,8 +1832,8 @@ namespace LuaUnit
      */
     int MoveClear(lua_State* L, Unit* unit)
     {
-        bool reset = Eluna::CHECKVAL<bool>(L, 2, true);
-        unit->GetMotionMaster()->Clear(reset);
+        (void) L; // ensure that the variable is referenced in order to pass compiler checks
+        unit->GetMotionMaster()->Clear();
         return 0;
     }
 
@@ -2153,11 +1940,11 @@ namespace LuaUnit
         float y = Eluna::CHECKVAL<float>(L, 4);
         float z = Eluna::CHECKVAL<float>(L, 5);
         bool genPath = Eluna::CHECKVAL<bool>(L, 6, true);
+
         unit->GetMotionMaster()->MovePoint(id, x, y, z, genPath);
         return 0;
     }
 
-#if (!defined(TBC) && !defined(CLASSIC))
     /**
      * Makes the [Unit] jump to the coordinates
      *
@@ -2176,11 +1963,12 @@ namespace LuaUnit
         float zSpeed = Eluna::CHECKVAL<float>(L, 5);
         float maxHeight = Eluna::CHECKVAL<float>(L, 6);
         uint32 id = Eluna::CHECKVAL<uint32>(L, 7, 0);
+
         Position pos(x, y, z);
+
         unit->GetMotionMaster()->MoveJump(pos, zSpeed, maxHeight, id);
         return 0;
     }
-#endif
 
     /**
      * The [Unit] will whisper the message to a [Player]
@@ -2197,8 +1985,10 @@ namespace LuaUnit
         (void)lang; // ensure that the variable is referenced in order to pass compiler checks
         Player* receiver = Eluna::CHECKOBJ<Player>(L, 4);
         bool bossWhisper = Eluna::CHECKVAL<bool>(L, 5, false);
+
         if (std::string(msg).length() > 0)
             unit->Whisper(msg, (Language)lang, receiver, bossWhisper);
+
         return 0;
     }
 
@@ -2214,8 +2004,10 @@ namespace LuaUnit
         const char* msg = Eluna::CHECKVAL<const char*>(L, 2);
         Unit* receiver = Eluna::CHECKOBJ<Unit>(L, 3, false);
         bool bossEmote = Eluna::CHECKVAL<bool>(L, 4, false);
+
         if (std::string(msg).length() > 0)
             unit->TextEmote(msg, receiver, bossEmote);
+
         return 0;
     }
 
@@ -2229,8 +2021,10 @@ namespace LuaUnit
     {
         const char* msg = Eluna::CHECKVAL<const char*>(L, 2);
         uint32 language = Eluna::CHECKVAL<uint32>(L, 3);
+
         if (std::string(msg).length() > 0)
             unit->Say(msg, (Language)language, unit);
+
         return 0;
     }
 
@@ -2244,8 +2038,10 @@ namespace LuaUnit
     {
         const char* msg = Eluna::CHECKVAL<const char*>(L, 2);
         uint32 language = Eluna::CHECKVAL<uint32>(L, 3);
+
         if (std::string(msg).length() > 0)
             unit->Yell(msg, (Language)language, unit);
+
         return 0;
     }
 
@@ -2270,6 +2066,7 @@ namespace LuaUnit
         Unit* target = Eluna::CHECKOBJ<Unit>(L, 2, false);
         uint32 spell = Eluna::CHECKVAL<uint32>(L, 3);
         bool triggered = Eluna::CHECKVAL<bool>(L, 4, false);
+
         SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo(spell);
         if (!spellEntry)
             return 0;
@@ -2305,7 +2102,21 @@ namespace LuaUnit
         Item* castItem = Eluna::CHECKOBJ<Item>(L, 8, false);
         ObjectGuid originalCaster = Eluna::CHECKVAL<ObjectGuid>(L, 9, ObjectGuid());
 
-        unit->CastCustomSpell(target, spell, has_bp0 ? &bp0 : NULL, has_bp1 ? &bp1 : NULL, has_bp2 ? &bp2 : NULL, triggered, castItem, NULL, ObjectGuid(originalCaster));
+        CastSpellExtraArgs args;
+        if (has_bp0)
+            args.AddSpellMod(SPELLVALUE_BASE_POINT0, bp0);
+        if (has_bp1)
+            args.AddSpellMod(SPELLVALUE_BASE_POINT1, bp1);
+        if (has_bp2)
+            args.AddSpellMod(SPELLVALUE_BASE_POINT2, bp2);
+        if (triggered)
+            args.TriggerFlags = TRIGGERED_FULL_MASK;
+        if (castItem)
+            args.SetCastItem(castItem);
+        if (originalCaster)
+            args.SetOriginalCaster(originalCaster);
+
+        unit->CastSpell(target, spell, args);
         return 0;
     }
 
@@ -2325,7 +2136,12 @@ namespace LuaUnit
         float _z = Eluna::CHECKVAL<float>(L, 4);
         uint32 spell = Eluna::CHECKVAL<uint32>(L, 5);
         bool triggered = Eluna::CHECKVAL<bool>(L, 6, true);
-        unit->CastSpell(_x, _y, _z, spell, triggered);
+
+        CastSpellExtraArgs args;
+        if (triggered)
+            args.TriggerFlags = TRIGGERED_FULL_MASK;
+
+        unit->CastSpell(Position(_x, _y, _z), spell, args);
         return 0;
     }
 
@@ -2364,20 +2180,20 @@ namespace LuaUnit
         bool delayed = Eluna::CHECKVAL<bool>(L, 3, true);
         switch (spellType)
         {
-        case 0:
-            spellType = CURRENT_MELEE_SPELL;
-            break;
-        case 1:
-            spellType = CURRENT_GENERIC_SPELL;
-            break;
-        case 2:
-            spellType = CURRENT_CHANNELED_SPELL;
-            break;
-        case 3:
-            spellType = CURRENT_AUTOREPEAT_SPELL;
-            break;
-        default:
-            return luaL_argerror(L, 2, "valid CurrentSpellTypes expected");
+            case 0:
+                spellType = CURRENT_MELEE_SPELL;
+                break;
+            case 1:
+                spellType = CURRENT_GENERIC_SPELL;
+                break;
+            case 2:
+                spellType = CURRENT_CHANNELED_SPELL;
+                break;
+            case 3:
+                spellType = CURRENT_AUTOREPEAT_SPELL;
+                break;
+            default:
+                return luaL_argerror(L, 2, "valid CurrentSpellTypes expected");
         }
 
         unit->InterruptSpell((CurrentSpellTypes)spellType, delayed);
@@ -2395,6 +2211,7 @@ namespace LuaUnit
     {
         uint32 spell = Eluna::CHECKVAL<uint32>(L, 2);
         Unit* target = Eluna::CHECKOBJ<Unit>(L, 3);
+
         SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo(spell);
         if (!spellEntry)
             return 1;
@@ -2426,7 +2243,6 @@ namespace LuaUnit
         return 0;
     }
 
-#if !defined(CLASSIC)
     /**
      * Removes all positive visible [Aura]'s from the [Unit].
      */
@@ -2435,7 +2251,6 @@ namespace LuaUnit
         unit->RemoveArenaAuras();
         return 0;
     }
-#endif
 
     /**
      * Adds the given unit state for the [Unit].
@@ -2528,9 +2343,10 @@ namespace LuaUnit
         if (Unit::IsDamageReducedByArmor(schoolmask))
             damage = Unit::CalcArmorReducedDamage(unit, target, damage, NULL, BASE_ATTACK);
 
+        // melee damage by specific school
         if (!spell)
         {
-            DamageInfo dmgInfo(unit, target, damage, nullptr, schoolmask, SPELL_DIRECT_DAMAGE);
+            DamageInfo dmgInfo(unit, target, damage, nullptr, schoolmask, SPELL_DIRECT_DAMAGE, BASE_ATTACK);
             unit->CalcAbsorbResist(dmgInfo);
 
             if (!dmgInfo.GetDamage())
@@ -2541,6 +2357,7 @@ namespace LuaUnit
             uint32 absorb = dmgInfo.GetAbsorb();
             uint32 resist = dmgInfo.GetResist();
             unit->DealDamageMods(target, damage, &absorb);
+
             Unit::DealDamage(unit, target, damage, NULL, DIRECT_DAMAGE, schoolmask, NULL, false);
             unit->SendAttackStateUpdate(HITINFO_AFFECTS_VICTIM, target, 0, schoolmask, damage, absorb, resist, VICTIMSTATE_HIT, 0);
             return 0;
@@ -2553,8 +2370,9 @@ namespace LuaUnit
         if (!spellInfo)
             return 0;
 
-        SpellNonMeleeDamage dmgInfo(unit, target, spellInfo, spellInfo->GetSchoolMask());
+        SpellNonMeleeDamage dmgInfo(unit, target, spell, spellInfo->GetSchoolMask());
         Unit::DealDamageMods(dmgInfo.target, dmgInfo.damage, &dmgInfo.absorb);
+
         unit->SendSpellNonMeleeDamageLog(&dmgInfo);
         unit->DealSpellDamage(&dmgInfo, true);
         return 0;
@@ -2580,6 +2398,7 @@ namespace LuaUnit
             HealInfo healInfo(unit, target, amount, info, info->GetSchoolMask());
             unit->HealBySpell(healInfo, critical);
         }
+
         return 0;
     }
 
@@ -2626,64 +2445,45 @@ namespace LuaUnit
         float threat = Eluna::CHECKVAL<float>(L, 3, true);
         uint32 spell = Eluna::CHECKVAL<uint32>(L, 4, 0);
 
-        uint32 schoolMask = Eluna::CHECKVAL<uint32>(L, 5, 0);
-        if (schoolMask > SPELL_SCHOOL_MASK_ALL)
-        {
-            return luaL_argerror(L, 4, "valid SpellSchoolMask expected");
-        }
-        unit->AddThreat(victim, threat, (SpellSchoolMask)schoolMask, spell ? sSpellMgr->GetSpellInfo(spell) : NULL);
+        unit->GetThreatManager().AddThreat(victim, threat, spell ? sSpellMgr->GetSpellInfo(spell) : NULL, true, true);
         return 0;
     }
 
-    /**
-     * Modifies threat in pct to the [Unit] from the victim
-     *
-     * @param [Unit] victim : [Unit] that caused the threat
-     * @param int32 percent : threat amount in pct
-     */
-    int ModifyThreatPct(lua_State* L, Unit* unit)
-    {
-        Unit* victim = Eluna::CHECKOBJ<Unit>(L, 2);
-        int32 threatPct = Eluna::CHECKVAL<int32>(L, 3, true);
-
-        unit->GetThreatMgr().ModifyThreatByPercent(victim, threatPct);
-        return 0;
-    }
-
-    /*int RestoreDisplayId(lua_State* L, Unit* unit)
+    int RestoreDisplayId(lua_State* L, Unit* unit)
     {
         unit->RestoreDisplayId();
         return 0;
-    }*/
+    }
 
-    /*int RestoreFaction(lua_State* L, Unit* unit)
+    int RestoreFaction(lua_State* L, Unit* unit)
     {
         unit->RestoreFaction();
         return 0;
-    }*/
+    }
 
-    /*int RemoveBindSightAuras(lua_State* L, Unit* unit)
+    int RemoveBindSightAuras(lua_State* L, Unit* unit)
     {
         unit->RemoveBindSightAuras();
         return 0;
-    }*/
+    }
 
-    /*int RemoveCharmAuras(lua_State* L, Unit* unit)
+    int RemoveCharmAuras(lua_State* L, Unit* unit)
     {
         unit->RemoveCharmAuras();
         return 0;
-    }*/
+    }
 
-    /*int DisableMelee(lua_State* L, Unit* unit)
+    int DisableMelee(lua_State* L, Unit* unit)
     {
-    bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
+        bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
 
-    if (apply)
-    unit->AddUnitState(UNIT_STATE_CANNOT_AUTOATTACK);
-    else
-    unit->ClearUnitState(UNIT_STATE_CANNOT_AUTOATTACK);
-    return 0;
-    }*/
+        if (apply)
+            unit->AddUnitState(UNIT_STATE_CANNOT_AUTOATTACK);
+        else
+            unit->ClearUnitState(UNIT_STATE_CANNOT_AUTOATTACK);
+
+        return 0;
+    }
 
     /*int SummonGuardian(lua_State* L, Unit* unit)
     {
@@ -2768,7 +2568,7 @@ namespace LuaUnit
         { "GetStat", &LuaUnit::GetStat },
         { "GetBaseSpellPower", &LuaUnit::GetBaseSpellPower },
         { "GetVehicleKit", &LuaUnit::GetVehicleKit },
-        { "GetVehicle", nullptr }, // not implemented
+        { "GetVehicle", &LuaUnit::GetVehicle },
         { "GetMovementType", &LuaUnit::GetMovementType },
 
         // Setters
@@ -2784,10 +2584,10 @@ namespace LuaUnit
         { "SetFacing", &LuaUnit::SetFacing },
         { "SetFacingToObject", &LuaUnit::SetFacingToObject },
         { "SetSpeed", &LuaUnit::SetSpeed },
-        { "SetStunned", nullptr }, // not implemented
-        {"SetRooted", &LuaUnit::SetRooted},
-        {"SetConfused", &LuaUnit::SetConfused},
-        {"SetFeared", &LuaUnit::SetFeared},
+        { "SetStunned", &LuaUnit::SetStunned },
+        { "SetRooted", &LuaUnit::SetRooted},
+        { "SetConfused", &LuaUnit::SetConfused},
+        { "SetFeared", &LuaUnit::SetFeared},
         { "SetPvP", &LuaUnit::SetPvP },
         { "SetFFA", &LuaUnit::SetFFA },
         { "SetSanctuary", &LuaUnit::SetSanctuary },

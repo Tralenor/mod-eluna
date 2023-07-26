@@ -70,41 +70,13 @@ namespace LuaSpell
     }
 
     /**
-     * Returns the reagents needed for the [Spell].
-     *
-     * @return table reagents : a table containing the [ItemTemplate]s and amount of reagents needed for the [Spell]
-    */
-    int GetReagentCost(lua_State* L, Spell* spell)
-    {
-        auto spellInfo = spell->GetSpellInfo();
-        auto reagents = spellInfo->Reagent;
-        auto reagentCounts = spellInfo->ReagentCount;
-        lua_newtable(L);
-        for (auto i = 0; i < MAX_SPELL_REAGENTS; ++i)
-        {
-            if (reagents[i] <= 0)
-                continue;
-            auto reagent = eObjectMgr->GetItemTemplate(reagents[i]);
-            auto count = reagentCounts[i];
-            Eluna::Push(L, reagent);
-            Eluna::Push(L, count);
-            lua_settable(L, -3);
-        }
-        return 1;
-    }
-
-    /**
      * Returns the spell duration of the [Spell].
      *
      * @return int32 duration
      */
     int GetDuration(lua_State* L, Spell* spell)
     {
-#if defined TRINITY || AZEROTHCORE
         Eluna::Push(L, spell->GetSpellInfo()->GetDuration());
-#else
-        Eluna::Push(L, GetSpellDuration(spell->m_spellInfo));
-#endif
         return 1;
     }
 
@@ -117,17 +89,12 @@ namespace LuaSpell
      */
     int GetTargetDest(lua_State* L, Spell* spell)
     {
-#if defined TRINITY || AZEROTHCORE
         if (!spell->m_targets.HasDst())
             return 3;
+
         float x, y, z;
         spell->m_targets.GetDstPos()->GetPosition(x, y, z);
-#else
-        if (!(spell->m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
-            return 3;
-        float x, y, z;
-        spell->m_targets.getDestination(x, y, z);
-#endif
+
         Eluna::Push(L, x);
         Eluna::Push(L, y);
         Eluna::Push(L, z);
@@ -148,7 +115,6 @@ namespace LuaSpell
      */
     int GetTarget(lua_State* L, Spell* spell)
     {
-#if defined TRINITY || AZEROTHCORE
         if (GameObject* target = spell->m_targets.GetGOTarget())
             Eluna::Push(L, target);
         else if (Item* target = spell->m_targets.GetItemTarget())
@@ -159,16 +125,6 @@ namespace LuaSpell
             Eluna::Push(L, target);
         else if (WorldObject* target = spell->m_targets.GetObjectTarget())
             Eluna::Push(L, target);
-#else
-        if (GameObject* target = spell->m_targets.getGOTarget())
-            Eluna::Push(L, target);
-        else if (Item* target = spell->m_targets.getItemTarget())
-            Eluna::Push(L, target);
-        else if (Corpse* target = spell->GetCaster()->GetMap()->GetCorpse(spell->m_targets.getCorpseTargetGuid()))
-            Eluna::Push(L, target);
-        else if (Unit* target = spell->m_targets.getUnitTarget())
-            Eluna::Push(L, target);
-#endif
         return 1;
     }
 
