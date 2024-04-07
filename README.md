@@ -57,9 +57,9 @@ Eluna API for AC:
 * [Getting started](https://github.com/ElunaLuaEngine/Eluna/blob/master/docs/USAGE.md)
 * [Eluna features](https://github.com/ElunaLuaEngine/Eluna/blob/master/docs/IMPL_DETAILS.md)
 * [Function documentation (AC version)](https://www.azerothcore.org/pages/eluna/index.html)
-* [Hook documentation](https://github.com/ElunaLuaEngine/Eluna/blob/master/Hooks.h)
+* [Hook documentation](https://github.com/ElunaLuaEngine/Eluna/blob/master/hooks/Hooks.h)
 * [Lua reference manual](http://www.lua.org/manual/5.2/)
-* [Forum - support, releases, guides](https://www.getmangos.eu/forums/forum/119-eluna-central/)
+* [Discord - support, releases, guides](https://discord.gg/bjkCVWqqfX)
 * [Example scripts](https://github.com/ElunaLuaEngine/Scripts)
 * [Contributing](https://github.com/ElunaLuaEngine/Eluna/blob/master/docs/CONTRIBUTING.md)
 
