@@ -61,7 +61,7 @@ namespace LuaUnit
         unit->ApplySpellImmune(0, 5, immunity, apply);
         return 0;
     }
-    
+
     /**
      * The [Unit] modifies a specific stat
      *
@@ -311,6 +311,9 @@ namespace LuaUnit
      */
     int IsDead(lua_State* L, Unit* unit)
     {
+#if defined (MANGOS) || CMANGOS
+        Eluna::Push(L, unit->IsDead());
+#else
         Eluna::Push(L, unit->isDead());
         return 1;
     }
@@ -322,6 +325,9 @@ namespace LuaUnit
      */
     int IsDying(lua_State* L, Unit* unit)
     {
+#if defined (MANGOS) || CMANGOS
+        Eluna::Push(L, unit->IsDying());
+#else
         Eluna::Push(L, unit->isDying());
         return 1;
     }
@@ -434,7 +440,11 @@ namespace LuaUnit
      */
     int IsUnderWater(lua_State* L, Unit* unit)
     {
+#ifdef CMANGOS
+        Eluna::Push(L, unit->IsUnderwater());
+#else
         Eluna::Push(L, unit->IsUnderWater());
+#endif
         return 1;
     }
 
@@ -691,6 +701,7 @@ namespace LuaUnit
      */
     int GetVictim(lua_State* L, Unit* unit)
     {
+#if defined TRINITY || AZEROTHCORE || CMANGOS
         Eluna::Push(L, unit->GetVictim());
         return 1;
     }
@@ -716,8 +727,11 @@ namespace LuaUnit
         uint32 type = Eluna::CHECKVAL<uint32>(L, 2);
         if (type >= CURRENT_MAX_SPELL)
             return luaL_argerror(L, 2, "valid CurrentSpellTypes expected");
-
+#ifndef CMANGOS
         Eluna::Push(L, unit->GetCurrentSpell(type));
+#else
+        Eluna::Push(L, unit->GetCurrentSpell(CurrentSpellTypes(type)));
+#endif
         return 1;
     }
 
@@ -761,6 +775,7 @@ namespace LuaUnit
      */
     int GetLevel(lua_State* L, Unit* unit)
     {
+#if defined(TRINITY) || CMANGOS
         Eluna::Push(L, unit->GetLevel());
         return 1;
     }
@@ -1085,6 +1100,7 @@ namespace LuaUnit
      */
     int GetFaction(lua_State* L, Unit* unit)
     {
+#if defined(TRINITY) || CMANGOS
         Eluna::Push(L, unit->GetFaction());
         return 1;
     }
@@ -1118,6 +1134,15 @@ namespace LuaUnit
         Acore::UnitListSearcher<Acore::AnyFriendlyUnitInObjectRangeCheck> searcher(unit, list, checker);
         Cell::VisitAllObjects(unit, searcher, range);
 
+#elif CMANGOS
+        MaNGOS::AnyFriendlyUnitInObjectRangeCheck checker(unit, nullptr, range);
+        MaNGOS::UnitListSearcher<MaNGOS::AnyFriendlyUnitInObjectRangeCheck> searcher(list, checker);
+        Cell::VisitGridObjects(unit, searcher, range);
+#else
+        MaNGOS::AnyFriendlyUnitInObjectRangeCheck checker(unit, range);
+        MaNGOS::UnitListSearcher<MaNGOS::AnyFriendlyUnitInObjectRangeCheck> searcher(list, checker);
+        Cell::VisitGridObjects(unit, searcher, range);
+#endif
         ElunaUtil::ObjectGUIDCheck guidCheck(unit->GET_GUID());
         list.remove_if(guidCheck);
 
@@ -1774,6 +1799,11 @@ namespace LuaUnit
             for (Unit::ControlSet::iterator itr = unit->m_Controlled.begin(); itr != unit->m_Controlled.end(); ++itr)
                 (*itr)->RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP);
         }
+#elif CMANGOS
+        unit->SetPvPFreeForAll(apply);
+#else
+        unit->SetFFAPvP(apply);
+#endif
         return 0;
     }
 
@@ -1788,12 +1818,20 @@ namespace LuaUnit
 
         if (apply)
         {
+#ifndef CMANGOS
             unit->SetByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_SANCTUARY);
+#else
+            unit->SetPvPSanctuary(true);
+#endif
             unit->CombatStop();
             unit->CombatStopWithPets();
         }
         else
+#ifndef CMANGOS
             unit->RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_SANCTUARY);
+#else
+            unit->SetPvPSanctuary(false);
+#endif
 
         return 0;
     }
@@ -1822,6 +1860,11 @@ namespace LuaUnit
     {
         bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
         unit->SetControlled(apply, UNIT_STATE_ROOT);
+#elif defined CMANGOS
+        unit->SetImmobilizedState(apply);
+#else
+        unit->SetRoot(apply);
+#endif
         return 0;
     }
 
@@ -1846,6 +1889,11 @@ namespace LuaUnit
     {
         bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
         unit->SetControlled(apply, UNIT_STATE_FLEEING);
+#elif defined CMANGOS
+        unit->SetFleeing(apply);
+#else
+        unit->SetFeared(apply);
+#endif
         return 0;
     }
 
@@ -1868,6 +1916,15 @@ namespace LuaUnit
      */
     int ClearThreatList(lua_State* /*L*/, Unit* unit)
     {
+#ifdef TRINITY
+        unit->GetThreatManager().ClearAllThreat();
+#elif AZEROTHCORE
+        unit->getThreatMgr().clearReferences();
+#elif CMANGOS
+        unit->getThreatManager().clearReferences();
+#else
+        unit->GetThreatManager().clearReferences();
+#endif
         unit->GetThreatMgr().ClearAllThreat();
         return 0;
     }
@@ -2153,7 +2210,11 @@ namespace LuaUnit
         float y = Eluna::CHECKVAL<float>(L, 4);
         float z = Eluna::CHECKVAL<float>(L, 5);
         bool genPath = Eluna::CHECKVAL<bool>(L, 6, true);
-        unit->GetMotionMaster()->MovePoint(id, x, y, z, genPath);
+#ifndef CMANGOS
+		unit->GetMotionMaster()->MovePoint(id, x, y, z, genPath);
+#else
+        unit->GetMotionMaster()->MovePoint(id, x, y, z, FORCED_MOVEMENT_NONE, genPath);
+#endif
         return 0;
     }
 
@@ -2400,6 +2461,35 @@ namespace LuaUnit
             return 1;
 
         Eluna::Push(L, unit->AddAura(spell, target));
+#else
+        if (!IsSpellAppliesAura(spellEntry) && !IsSpellHaveEffect(spellEntry, SPELL_EFFECT_PERSISTENT_AREA_AURA))
+            return 1;
+
+        SpellAuraHolder* holder = CreateSpellAuraHolder(spellEntry, target, unit);
+
+        for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
+        {
+            uint8 eff = spellEntry->Effect[i];
+#ifndef CMANGOS
+            if (eff >= TOTAL_SPELL_EFFECTS)
+#else
+            if (eff >= MAX_SPELL_EFFECTS)
+#endif
+                continue;
+            if (IsAreaAuraEffect(eff) ||
+                eff == SPELL_EFFECT_APPLY_AURA ||
+                eff == SPELL_EFFECT_PERSISTENT_AREA_AURA)
+            {
+#ifndef CMANGOS
+                Aura* aur = CreateAura(spellEntry, SpellEffIndex(i), NULL, holder, target);
+#else
+                Aura* aur = CreateAura(spellEntry, SpellEffIndex(i), NULL, NULL, holder, target);
+#endif
+                holder->AddAura(aur, SpellEffIndex(i));
+            }
+        }
+        Eluna::Push(L, target->AddSpellAuraHolder(holder));
+#endif
         return 1;
     }
 
@@ -2520,6 +2610,13 @@ namespace LuaUnit
         {
             Unit::DealDamage(unit, target, damage, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, durabilityloss);
             unit->SendAttackStateUpdate(HITINFO_AFFECTS_VICTIM, target, 1, SPELL_SCHOOL_MASK_NORMAL, damage, 0, 0, VICTIMSTATE_HIT, 0);
+#elif defined CMANGOS
+            Unit::DealDamage(unit, target, damage, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, durabilityloss);
+            unit->SendAttackStateUpdate(HITINFO_NORMALSWING2, target, SPELL_SCHOOL_MASK_NORMAL, damage, 0, 0, VICTIMSTATE_NORMAL, 0);
+#else
+            unit->DealDamage(target, damage, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, durabilityloss);
+            unit->SendAttackStateUpdate(HITINFO_NORMALSWING2, target, SPELL_SCHOOL_MASK_NORMAL, damage, 0, 0, VICTIMSTATE_NORMAL, 0);
+#endif
             return 0;
         }
 
@@ -2527,6 +2624,38 @@ namespace LuaUnit
 
         if (Unit::IsDamageReducedByArmor(schoolmask))
             damage = Unit::CalcArmorReducedDamage(unit, target, damage, NULL, BASE_ATTACK);
+#else
+        if (schoolmask & SPELL_SCHOOL_MASK_NORMAL)
+#ifndef CMANGOS
+			damage = unit->CalcArmorReducedDamage(target, damage);
+#else
+            damage = unit->CalcArmorReducedDamage(unit, target, damage);
+#endif
+#endif
+
+#ifdef TRINITY
+        // melee damage by specific school
+        if (!spell)
+        {
+            DamageInfo dmgInfo(unit, target, damage, nullptr, schoolmask, SPELL_DIRECT_DAMAGE, BASE_ATTACK);
+            unit->CalcAbsorbResist(dmgInfo);
+
+            if (!dmgInfo.GetDamage())
+                damage = 0;
+            else
+                damage = dmgInfo.GetDamage();
+
+            uint32 absorb = dmgInfo.GetAbsorb();
+            uint32 resist = dmgInfo.GetResist();
+            unit->DealDamageMods(target, damage, &absorb);
+#ifdef TRINITY
+            Unit::DealDamage(unit, target, damage, NULL, DIRECT_DAMAGE, schoolmask, NULL, false);
+#else
+            unit->DealDamage(target, damage, NULL, DIRECT_DAMAGE, schoolmask, NULL, false);
+#endif
+            unit->SendAttackStateUpdate(HITINFO_AFFECTS_VICTIM, target, 0, schoolmask, damage, absorb, resist, VICTIMSTATE_HIT, 0);
+            return 0;
+        }
 
         if (!spell)
         {
@@ -2558,6 +2687,38 @@ namespace LuaUnit
         unit->SendSpellNonMeleeDamageLog(&dmgInfo);
         unit->DealSpellDamage(&dmgInfo, true);
         return 0;
+#else
+        // melee damage by specific school
+        if (!spell)
+        {
+            uint32 absorb = 0;
+#ifndef CMANGOS
+			uint32 resist = 0;
+#else
+            int32 resist = 0;
+#endif
+            target->CalculateDamageAbsorbAndResist(unit, schoolmask, SPELL_DIRECT_DAMAGE, damage, &absorb, &resist);
+
+            if (damage <= absorb + resist)
+                damage = 0;
+            else
+                damage -= absorb + resist;
+
+#ifndef CMANGOS
+			unit->DealDamageMods(target, damage, &absorb);
+            unit->DealDamage(target, damage, NULL, DIRECT_DAMAGE, schoolmask, NULL, false);
+#else
+            unit->DealDamageMods(unit, target, damage, &absorb, DIRECT_DAMAGE);
+            unit->DealDamage(unit, target, damage, NULL, DIRECT_DAMAGE, schoolmask, NULL, false);
+#endif
+            unit->SendAttackStateUpdate(HITINFO_NORMALSWING2, target, schoolmask, damage, absorb, resist, VICTIMSTATE_NORMAL, 0);
+            return 0;
+        }
+
+        // non-melee damage
+        unit->SpellNonMeleeDamageLog(target, spell, damage);
+        return 0;
+#endif
     }
 
     /**
@@ -2595,6 +2756,11 @@ namespace LuaUnit
         bool durLoss = Eluna::CHECKVAL<bool>(L, 3, true);
 
         Unit::Kill(unit, target, durLoss);
+#elif defined CMANGOS
+        unit->DealDamage(unit, target, target->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, durLoss);
+#else
+		unit->DealDamage(target, target->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, durLoss);
+#endif
         return 0;
     }
 
@@ -2647,6 +2813,20 @@ namespace LuaUnit
         int32 threatPct = Eluna::CHECKVAL<int32>(L, 3, true);
 
         unit->GetThreatMgr().ModifyThreatByPercent(victim, threatPct);
+#else
+#ifdef CMANGOS
+        uint32 schoolMask = Eluna::CHECKVAL<uint32>(L, 5, 0);
+        SpellEntry const* spellEntry = GetSpellStore()->LookupEntry<SpellEntry>(spell);
+        unit->AddThreat(victim, threat, false, (SpellSchoolMask)schoolMask, spellEntry);
+#else
+        SpellEntry const* spellEntry = sSpellStore.LookupEntry(spell);
+#ifdef CLASSIC
+        unit->AddThreat(victim, threat, false, spellEntry ? GetSchoolMask(spellEntry->School) : SPELL_SCHOOL_MASK_NONE, spellEntry);
+#else
+        unit->AddThreat(victim, threat, false, spellEntry ? static_cast<SpellSchoolMask>(spellEntry->SchoolMask) : SPELL_SCHOOL_MASK_NONE, spellEntry);
+#endif
+#endif
+#endif
         return 0;
     }
 

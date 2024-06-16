@@ -360,7 +360,11 @@ namespace LuaPlayer
      */
     int IsMoving(lua_State* L, Player* player) // enable for unit when mangos support it
     {
+#ifdef CMANGOS
+        Eluna::Push(L, player->IsMoving());
+#else
         Eluna::Push(L, player->isMoving());
+#endif
         return 1;
     }
 
@@ -481,7 +485,7 @@ namespace LuaPlayer
      */
     int IsGM(lua_State* L, Player* player)
     {
-#if defined TRINITY || AZEROTHCORE
+#if defined TRINITY || AZEROTHCORE || CMANGOS
         Eluna::Push(L, player->IsGameMaster());
 #else
         Eluna::Push(L, player->isGameMaster());
@@ -1064,7 +1068,11 @@ namespace LuaPlayer
     {
         float radius = Eluna::CHECKVAL<float>(L, 2);
 
-        Eluna::Push(L, player->GetNextRandomRaidMember(radius));
+#ifndef CMANGOS
+		Eluna::Push(L, player->GetNextRandomRaidMember(radius));
+#else
+        Eluna::Push(L, player->GetNextRandomRaidMember(radius, SPELL_AURA_NONE));
+#endif
         return 1;
     }
 
@@ -1179,8 +1187,11 @@ namespace LuaPlayer
     int GetSkillTempBonusValue(lua_State* L, Player* player)
     {
         uint32 skill = Eluna::CHECKVAL<uint32>(L, 2);
-
+#ifdef CMANGOS
+        Eluna::Push(L, player->GetSkillBonusTemporary(skill));
+#else
         Eluna::Push(L, player->GetSkillTempBonusValue(skill));
+#endif
         return 1;
     }
 
@@ -1193,8 +1204,11 @@ namespace LuaPlayer
     int GetSkillPermBonusValue(lua_State* L, Player* player)
     {
         uint32 skill = Eluna::CHECKVAL<uint32>(L, 2);
-
+#ifdef CMANGOS
+        Eluna::Push(L, player->GetSkillBonusPermanent(skill));
+#else
         Eluna::Push(L, player->GetSkillPermBonusValue(skill));
+#endif
         return 1;
     }
 
@@ -1207,8 +1221,11 @@ namespace LuaPlayer
     int GetPureSkillValue(lua_State* L, Player* player)
     {
         uint32 skill = Eluna::CHECKVAL<uint32>(L, 2);
-
+#ifdef CMANGOS
+        Eluna::Push(L, player->GetSkillValuePure(skill));
+#else
         Eluna::Push(L, player->GetPureSkillValue(skill));
+#endif
         return 1;
     }
 
@@ -1221,8 +1238,11 @@ namespace LuaPlayer
     int GetBaseSkillValue(lua_State* L, Player* player)
     {
         uint32 skill = Eluna::CHECKVAL<uint32>(L, 2);
-
+#ifdef CMANGOS
+        Eluna::Push(L, player->GetSkillValueBase(skill));
+#else
         Eluna::Push(L, player->GetBaseSkillValue(skill));
+#endif
         return 1;
     }
 
@@ -1249,8 +1269,11 @@ namespace LuaPlayer
     int GetPureMaxSkillValue(lua_State* L, Player* player)
     {
         uint32 skill = Eluna::CHECKVAL<uint32>(L, 2);
-
+#ifdef CMANGOS
+        Eluna::Push(L, player->GetSkillMaxPure(skill));
+#else
         Eluna::Push(L, player->GetPureMaxSkillValue(skill));
+#endif
         return 1;
     }
 
@@ -1263,8 +1286,11 @@ namespace LuaPlayer
     int GetMaxSkillValue(lua_State* L, Player* player)
     {
         uint32 skill = Eluna::CHECKVAL<uint32>(L, 2);
-
+#ifdef CMANGOS
+        Eluna::Push(L, player->GetSkillMax(skill));
+#else
         Eluna::Push(L, player->GetMaxSkillValue(skill));
+#endif
         return 1;
     }
 
@@ -1859,12 +1885,20 @@ namespace LuaPlayer
         if (apply)
         {
             player->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_SILENCED);
-            player->SetClientControl(player, 0);
+#ifndef CMANGOS
+			player->SetClientControl(player, 0);
+#else
+            player->UpdateClientControl(player, 0);
+#endif
         }
         else
         {
             player->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_SILENCED);
-            player->SetClientControl(player, 1);
+#ifndef CMANGOS
+			player->SetClientControl(player, 1);
+#else
+            player->UpdateClientControl(player, 1);
+#endif
         }
         return 0;
     }
@@ -1992,8 +2026,11 @@ namespace LuaPlayer
     {
         uint32 faction = Eluna::CHECKVAL<uint32>(L, 2);
         int32 value = Eluna::CHECKVAL<int32>(L, 3);
-
+#if defined(CMANGOS) && defined(TBC)
+        FactionEntry const* factionEntry = sFactionStore.LookupEntry<FactionEntry>(faction);
+#else
         FactionEntry const* factionEntry = sFactionStore.LookupEntry(faction);
+#endif
         player->GetReputationMgr().SetReputation(factionEntry, value);
         return 0;
     }
@@ -2299,8 +2336,11 @@ namespace LuaPlayer
     int SetFFA(lua_State* L, Player* player)
     {
         bool apply = Eluna::CHECKVAL<bool>(L, 2, true);
-
+#ifdef CMANGOS
+        player->SetPvPFreeForAll(apply);
+#else
         player->SetFFAPvP(apply);
+#endif
         return 0;
     }
 #endif
@@ -2419,7 +2459,11 @@ namespace LuaPlayer
 #else
         float x, y, z;
         summoner->GetPosition(x,y,z);
-        player->SetSummonPoint(summoner->GetMapId(), x, y, z);
+#ifndef CMANGOS
+		player->SetSummonPoint(summoner->GetMapId(), x, y, z);
+#else
+        player->SetSummonPoint(summoner->GetMapId(), x, y, z, summoner->GetMasterGuid());
+#endif
 
         WorldPacket data(SMSG_SUMMON_REQUEST, 8 + 4 + 4);
         data << summoner->GET_GUID();
@@ -2622,8 +2666,11 @@ namespace LuaPlayer
     int LogoutPlayer(lua_State* L, Player* player)
     {
         bool save = Eluna::CHECKVAL<bool>(L, 2, true);
-
-        player->GetSession()->LogoutPlayer(save);
+#ifndef CMANGOS
+		player->GetSession()->LogoutPlayer(save);
+#else
+        player->GetSession()->LogoutPlayer();
+#endif
         return 0;
     }
 
@@ -3110,7 +3157,11 @@ namespace LuaPlayer
             {
                 if (CreatureInfo const* cInfo = ObjectMgr::GetCreatureTemplate(creature))
                     for (uint16 z = 0; z < creaturecount; ++z)
-                        player->KilledMonster(cInfo, ObjectGuid());
+#ifndef CMANGOS
+						player->KilledMonster(cInfo, ObjectGuid());
+#else
+                        player->KilledMonster(cInfo, nullptr);
+#endif
             }
             else if (creature < 0)
             {
@@ -3127,7 +3178,11 @@ namespace LuaPlayer
             uint32 repValue = quest->GetRepObjectiveValue();
             uint32 curRep = player->GetReputationMgr().GetReputation(repFaction);
             if (curRep < repValue)
+#if defined(CMANGOS) && defined(TBC)
+                if (FactionEntry const* factionEntry = sFactionStore.LookupEntry<FactionEntry>(repFaction))
+#else
                 if (FactionEntry const* factionEntry = sFactionStore.LookupEntry(repFaction))
+#endif
                     player->GetReputationMgr().SetReputation(factionEntry, repValue);
         }
 
@@ -3355,7 +3410,11 @@ namespace LuaPlayer
         uint32 xp = Eluna::CHECKVAL<uint32>(L, 2);
         Unit* victim = Eluna::CHECKOBJ<Unit>(L, 3, false);
 
-        player->GiveXP(xp, victim);
+#ifndef CMANGOS
+		player->GiveXP(xp, victim);
+#else
+        player->GiveXP(xp, nullptr);
+#endif
         return 0;
     }
 
@@ -3612,6 +3671,11 @@ namespace LuaPlayer
             player->FinishTaxiFlight();
         else
             player->SaveRecallPosition();
+#elif defined CMANGOS
+        if (player->IsTaxiFlying())
+            player->TaxiFlightInterrupt();
+        else
+            player->SaveRecallPosition();
 #else
         if (player->IsTaxiFlying())
         {
@@ -3762,6 +3826,8 @@ namespace LuaPlayer
     {
 #ifdef TRINITY
         player->GetSpellHistory()->ResetAllCooldowns();
+#elif CMANGOS
+        player->RemoveAllCooldowns();
 #else
         player->RemoveAllSpellCooldown();
 #endif
@@ -4049,8 +4115,10 @@ namespace LuaPlayer
             return luaL_error(L, "GossipMenuItem not added. Reached Max amount of possible GossipMenuItems in this GossipMenu");
         }
 #else
-#ifndef CLASSIC
-        player->PlayerTalkClass->GetGossipMenu().AddMenuItem(_icon, msg, _sender, _intid, _promptMsg, _money, _code);
+#if !defined(CLASSIC) && !defined(CMANGOS)
+		player->PlayerTalkClass->GetGossipMenu().AddMenuItem(_icon, msg, _sender, _intid, _promptMsg, _money, _code);
+#elif CMANGOS
+        player->GetPlayerMenu()->GetGossipMenu().AddMenuItem(_icon, msg, _sender, _intid, _promptMsg, _money, _code);
 #else
         player->PlayerTalkClass->GetGossipMenu().AddMenuItem(_icon, msg, _sender, _intid, _promptMsg, _code);
 #endif
@@ -4067,6 +4135,8 @@ namespace LuaPlayer
     {
 #if defined TRINITY || AZEROTHCORE
         player->PlayerTalkClass->SendCloseGossip();
+#elif CMANGOS
+        player->GetPlayerMenu()->CloseGossip();
 #else
         player->PlayerTalkClass->CloseGossip();
 #endif
@@ -4094,9 +4164,17 @@ namespace LuaPlayer
         if (sender->GetTypeId() == TYPEID_PLAYER)
         {
             uint32 menu_id = Eluna::CHECKVAL<uint32>(L, 4);
-            player->PlayerTalkClass->GetGossipMenu().SetMenuId(menu_id);
+#ifndef CMANGOS
+			player->PlayerTalkClass->GetGossipMenu().SetMenuId(menu_id);
+#else
+            player->GetPlayerMenu()->GetGossipMenu().SetMenuId(menu_id);
+#endif
         }
-        player->PlayerTalkClass->SendGossipMenu(npc_text, sender->GET_GUID());
+#ifndef CMANGOS
+		player->PlayerTalkClass->SendGossipMenu(npc_text, sender->GET_GUID());
+#else
+        player->GetPlayerMenu()->SendGossipMenu(npc_text, sender->GET_GUID());
+#endif
         return 0;
     }
 
@@ -4110,7 +4188,11 @@ namespace LuaPlayer
      */
     int GossipClearMenu(lua_State* /*L*/, Player* player)
     {
-        player->PlayerTalkClass->ClearMenus();
+#ifndef CMANGOS
+		player->PlayerTalkClass->ClearMenus();
+#else
+        player->GetPlayerMenu()->ClearMenus();
+#endif
         return 0;
     }
 
@@ -4198,7 +4280,11 @@ namespace LuaPlayer
         if (!quest)
             return 0;
 
-        player->PlayerTalkClass->SendQuestGiverQuestDetails(quest, player->GET_GUID(), activateAccept);
+#ifndef CMANGOS
+		player->PlayerTalkClass->SendQuestGiverQuestDetails(quest, player->GET_GUID(), activateAccept);
+#else
+        player->GetPlayerMenu()->SendQuestGiverQuestDetails(quest, player->GET_GUID(), activateAccept);
+#endif
         return 0;
     }
 
@@ -4241,7 +4327,11 @@ namespace LuaPlayer
 
         // Get correct existing group if any
         Group* group = player->GetGroup();
-        if (group && group->isBGGroup())
+#ifndef CMANGOS
+		if (group && group->isBGGroup())
+#else
+        if (group && group->isBattleGroup())
+#endif
             group = player->GetOriginalGroup();
 
         bool success = false;
