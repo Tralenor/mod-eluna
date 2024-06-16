@@ -420,7 +420,7 @@ namespace LuaPlayer
         Eluna::Push(L, player->HasTankSpec());
         return 1;
     }
-    
+
     /**
      * Returns `true` if the [Player] has a Melee Specialization, `false` otherwise.
      *
@@ -431,7 +431,7 @@ namespace LuaPlayer
         Eluna::Push(L, player->HasMeleeSpec());
         return 1;
     }
-    
+
     /**
      * Returns `true` if the [Player] has a Caster Specialization, `false` otherwise.
      *
@@ -442,7 +442,7 @@ namespace LuaPlayer
         Eluna::Push(L, player->HasCasterSpec());
         return 1;
     }
-    
+
     /**
      * Returns `true` if the [Player] has a Heal Specialization, `false` otherwise.
      *
@@ -945,8 +945,8 @@ namespace LuaPlayer
         {
             AchievementEntry const* achievement = sAchievementStore.LookupEntry(pair.first);
             if (achievement && (achievement->categoryId != 81 || countFeatsOfStrength))
-            {               
-                    count++;             
+            {
+                    count++;
             }
         }
 
@@ -1589,6 +1589,20 @@ namespace LuaPlayer
             Eluna::Push(L, player->GetMailSize());
         }
 
+        return 1;
+    }
+
+    /**
+     * Returns a mailed [Item] by guid.
+     *
+     * @param ObjectGuid guid : an item guid
+     * @return [Item] item
+     */
+    int GetMailItem(lua_State* L, Player* player)
+    {
+        ObjectGuid guid = Eluna::CHECKVAL<ObjectGuid>(L, 2);
+
+        Eluna::Push(L, player->GetMItem(guid.GetCounter()));
         return 1;
     }
 
